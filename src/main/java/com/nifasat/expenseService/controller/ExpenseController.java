@@ -46,7 +46,7 @@ public class ExpenseController {
         }
     }
 
-    @PostMapping(path="/addExpense")
+    @PostMapping(path="/expense/v1/addExpense")
     public ResponseEntity<Boolean> addExpenses(@RequestHeader(value = "X-User-Id") @NotNull String userId, @RequestBody ExpenseDto
                                                expenseDto){
         try{
@@ -57,7 +57,7 @@ public class ExpenseController {
         }
     }
 
-    @DeleteMapping(path="/deleteExpense")
+    @DeleteMapping(path="/expense/v1/deleteExpense")
     public ResponseEntity<String> deleteExpense(@RequestParam("user_id") @NotNull String userId, @RequestBody ExpenseDto expenseDto){
         Integer done = expenseService.deleteExpense(userId, expenseDto);
         if(done>0){
