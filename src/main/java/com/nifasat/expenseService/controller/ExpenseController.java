@@ -1,11 +1,15 @@
 package com.nifasat.expenseService.controller;
 
+import com.nifasat.expenseService.dto.ExpenseCountDTO;
 import com.nifasat.expenseService.dto.ExpenseDto;
+import com.nifasat.expenseService.dto.MerchantSummaryDTO;
+import com.nifasat.expenseService.entity.Expense;
 import com.nifasat.expenseService.service.ExpenseService;
 import jakarta.websocket.server.PathParam;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.hibernate.annotations.NotFound;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,9 +21,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 @RestController
 public class ExpenseController {
@@ -35,11 +45,22 @@ public class ExpenseController {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
-    @GetMapping("/expense/v1/range")
+    @GetMapping("/expense/v1/rangeBasedExpense")
     public ResponseEntity<List<ExpenseDto>> getRangeExpenses(@RequestParam("user_id") @NotNull String userId, @RequestParam("start_date") @NotNull
                                                              Long startDate, @RequestParam("end_date") @NotNull Long endDate){
         try {
             List<ExpenseDto> expenseDtos = expenseService.getTimeBasedExpense(userId, startDate, endDate);
+            return new ResponseEntity<>(expenseDtos, HttpStatus.OK);
+        } catch (Exception ex){
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @GetMapping("/expense/v1/merchant/rangeBasedExpense")
+    public ResponseEntity<List<ExpenseDto>> getMerchantRangeExpenses(@RequestParam("user_id") @NotNull String userId, @RequestParam("merchant") @NotNull String merchant, @RequestParam("start_date") @NotNull
+    Long startDate, @RequestParam("end_date") @NotNull Long endDate){
+        try {
+            List<ExpenseDto> expenseDtos = expenseService.getTimeAndMerchantBasedExpense(userId, merchant, startDate, endDate);
             return new ResponseEntity<>(expenseDtos, HttpStatus.OK);
         } catch (Exception ex){
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -67,4 +88,24 @@ public class ExpenseController {
         }
     }
 
+    @GetMapping("/expense/v1/count")
+    public ResponseEntity<List<ExpenseCountDTO>> getExpenseCountsByTimeframe(
+            @RequestParam("user_id") String userId,
+            @RequestParam("time_frame") String timeframe,
+            @RequestParam("start_date") Date startDate,
+            @RequestParam("end_date") Date endDate) {
+        List<ExpenseCountDTO> expenses =
+                expenseService.getExpenseCountsByTimeframe(userId, timeframe, startDate, endDate);
+        return Optional.ofNullable(expenses).map(expenseCountDTOS -> ResponseEntity.ok(expenseCountDTOS))
+                .orElse(ResponseEntity.badRequest().build());
+    }
+
+    @GetMapping("/expense/v1/merchant-summary")
+    public ResponseEntity<List<MerchantSummaryDTO>> getMerchantSummary(
+            @RequestParam("user_id") String userId,
+            @RequestParam("start_date") Date startDate,
+            @RequestParam("end_date") Date endDate) {
+
+        return ResponseEntity.ok(expenseService.getMerchantSummary(userId, startDate, endDate));
+    }
 }

@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface ExpenseRepository extends CrudRepository<Expense, Long> {
     List<Expense> findByUserId(String userId);
     List<Expense> findByUserIdAndCreatedAtBetween(String userId, Date startTime, Date endTime);
+    List<Expense> findByUserIdAndMerchantAndCreatedAtBetween(String userId, String merchant, Date startTime, Date endTime);
     Optional<Expense> findByUserIdAndExternalId(String userId, String externalId);
     Integer deleteByExternalId(String externalId);
 }
