@@ -9,6 +9,7 @@ import jakarta.websocket.server.PathParam;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.hibernate.annotations.NotFound;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -92,10 +93,14 @@ public class ExpenseController {
     public ResponseEntity<List<ExpenseCountDTO>> getExpenseCountsByTimeframe(
             @RequestParam("user_id") String userId,
             @RequestParam("time_frame") String timeframe,
-            @RequestParam("start_date") Date startDate,
-            @RequestParam("end_date") Date endDate) {
+            @RequestParam("start_date") Long startDate,
+            @RequestParam("end_date") Long endDate) {
+
+        Date startTime = new Date(startDate);
+        Date endTime = new Date(endDate);
+
         List<ExpenseCountDTO> expenses =
-                expenseService.getExpenseCountsByTimeframe(userId, timeframe, startDate, endDate);
+                expenseService.getExpenseCountsByTimeframe(userId, timeframe, startTime, endTime);
         return Optional.ofNullable(expenses).map(expenseCountDTOS -> ResponseEntity.ok(expenseCountDTOS))
                 .orElse(ResponseEntity.badRequest().build());
     }
@@ -103,9 +108,25 @@ public class ExpenseController {
     @GetMapping("/expense/v1/merchant-summary")
     public ResponseEntity<List<MerchantSummaryDTO>> getMerchantSummary(
             @RequestParam("user_id") String userId,
-            @RequestParam("start_date") Date startDate,
-            @RequestParam("end_date") Date endDate) {
+            @RequestParam("start_date") Long startDate,
+            @RequestParam("end_date") Long endDate) {
 
-        return ResponseEntity.ok(expenseService.getMerchantSummary(userId, startDate, endDate));
+        Date startTime = new Date(startDate);
+        Date endTime = new Date(endDate);
+
+        return ResponseEntity.ok(expenseService.getMerchantSummary(userId, startTime, endTime));
+    }
+
+    @GetMapping("/expense/v1/summary")
+    public ResponseEntity<Map<String, Object>> getExpenseSummary(@RequestParam("user_id") @NotNull String userId) {
+
+        try {
+            return ResponseEntity.ok(expenseService.getSummary(userId));
+        } catch (EmptyResultDataAccessException e){
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
     }
 }
